@@ -2,7 +2,7 @@
   "name": "SNACK ANAS",
   "short_name": "SNACK ANAS",
   "description": "SNACK ANAS - Burgers, Tacos, Panini",
-  "start_url": "/",
+  "start_url": "/snack-anas/",
   "display": "standalone",
   "background_color": "#0D7A3E",
   "theme_color": "#0D7A3E",
