@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3075/3075977.png">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3075/3075977.png">
+
+
+<!-- PWA - POUR INSTALLER L'APPLICATION -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0D7A3E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SNACK ANAS">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+
+
+
+
+  
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سناك السعادة - Simulateur</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial;background:#FFF3E0;margin:0;padding:15px;text-align:center}
+h1{color:#E65100;margin:5px}
+#banner{background:#FFCC00;padding:10px;border-radius:10px;font-weight:bold;margin-bottom:10px}
+.box{background:white;padding:15px;border-radius:15px;box-shadow:0 2px 8px #ccc;margin-bottom:15px;text-align:right}
+.item{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding:10px 0}
+.item b{font-size:15px}
+.item span{color:#888;font-size:13px}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:32px;height:32px;border-radius:50%;border:none;font-size:18px;font-weight:bold;background:#FF9800;color:white}
+.qty input{width:40px;text-align:center;padding:5px;border:1px solid #ddd;border-radius:8px}
+input[type=text],input[type=number]{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;margin:5px 0}
+.btn{width:100%;background:#25D366;color:white;border:none;padding:14px;border-radius:30px;font-size:17px;font-weight:bold;margin-top:10px}
+.btn2{background:#E65100}
+.result{background:#E8F5E9;padding:15px;border-radius:15px;font-size:18px;line-height:1.8}
+#app{display:none}
+#lock{display:none}
+.wa-btn{background:#25D366;color:white;padding:14px 20px;border-radius:30px;text-decoration:none;font-weight:bold;display:block;text-align:center;margin-top:10px}
+.copy-btn{background:#eee;border:none;padding:10px 15px;border-radius:20px;margin-top:10px;font-weight:bold}
+</style>
+</head>
+
+<!-- BOUTON INSTALLER L'APPLICATION -->
+<div id="installBox" style="display:none;position:fixed;bottom:75px;left:10px;right:10px;background:#0D7A3E;color:white;padding:14px;border-radius:16px;text-align:center;z-index:99;box-shadow:0 4px 15px rgba(0,0,0,.3);">
+<b>📱 Installer SNACK ANAS sur votre téléphone ?</b><br>
+<span style="font-size:12px;">Accès rapide, sans passer par le navigateur</span><br>
+<button id="btnInstall" style="margin-top:8px;background:white;color:#0D7A3E;border:none;padding:10px 22px;border-radius:25px;font-weight:bold;font-size:15px;">⬇️ Installer maintenant</button>
+<button onclick="document.getElementById('installBox').style.display='none'" style="margin-top:8px;background:transparent;color:white;border:1px solid white;padding:8px 14px;border-radius:25px;margin-left:6px;">Plus tard</button>
+</div>
+
+<script>
+// Enregistrer le Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js');
+}
+
+// Gérer le bouton Installer
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBox').style.display = 'block';
+});
+document.getElementById('btnInstall').addEventListener('click', function(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(result){
+      if(result.outcome === 'accepted'){
+        document.getElementById('installBox').style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  } else {
+    alert('Sur iPhone : Cliquez sur Partager ⬆️ puis "Sur l\'écran d\'accueil"');
+  }
+});
+</script>
+  
+<body>
+
+<h1>🍔 سناك السعادة</h1>
+<p>حسب شحال غادي تربح فالنهار</p>
+<div id="banner"></div>
+
+<!-- التطبيق -->
+<div id="app">
+<div class="box">
+<h3>1 - شنو كتبيع اليوم؟ دخل العدد</h3>
+<div id="menu"></div>
+</div>
+
+<div class="box">
+<h3>2 - المصاريف ديال اليوم</h3>
+<input type="number" id="kera" placeholder="الكراء ديال النهار - مثال: 100">
+<input type="number" id="salaire" placeholder="الخلاص ديال الخدامة - مثال: 80">
+<input type="number" id="daw" placeholder="الضو و الماء و الغاز - مثال: 50">
+</div>
+
+<button class="btn btn2" onclick="calculer()">حسب الربح ديالي 💰</button>
+<div id="resultat" class="box result" style="display:none;"></div>
+<button class="btn" onclick="resetAll()">بدا نهار جديد 🔄</button>
+</div>
+
+<!-- القفل -->
+<div id="lock" class="box" style="text-align:center;">
+<h2 style="color:red;">🔒 التطبيق مقفول</h2>
+<p id="msgLock">دخل كود التفعيل</p>
+<input type="text" id="codeInput" placeholder="مثال: SAADA-1234" style="text-align:center;">
+<br>
+<button class="btn" onclick="activer()">فعّل التطبيق ✅</button>
+
+<!-- زر واتساب مصلح -->
+<a class="wa-btn" href="https://wa.me/212656533058?text=Salam%20bghit%20code%20Snack%20Saada" target="_blank">طلب الكود من واتساب ✅</a>
+<p style="font-size:13px;margin-top:12px;">ولا صيفط ليا فـ واتساب: <b>0656533058</b></p>
+<button class="copy-btn" onclick="copyNum()">نسخ النمرة 📋</button>
+
+<p id="myID" style="font-size:11px;color:#999;margin-top:10px;"></p>
+</div>
+
+<script>
+// ===== 1. Device ID =====
+var deviceID = localStorage.getItem("snack_device");
+if(!deviceID){
+  deviceID = "SNACK-" + Math.random().toString(36).substr(2,6).toUpperCase();
+  localStorage.setItem("snack_device", deviceID);
+}
+document.getElementById("myID").innerText = "ID ديالك: " + deviceID;
+
+// ===== 2. 7 أيام =====
+var debut = localStorage.getItem("snack_debut");
+if(!debut){
+  debut = new Date().toISOString();
+  localStorage.setItem("snack_debut", debut);
+}
+var jours = Math.floor((new Date() - new Date(debut)) / (1000*60*60*24));
+var restants = 7 - jours;
+document.getElementById("banner").innerText = "نسخة تجريبية - باقي ليك " + restants + " أيام - ID: " + deviceID;
+
+if(jours >= 7){
+  document.getElementById("lock").style.display = "block";
+  document.getElementById("msgLock").innerText = "⏰ سالات 7 أيام ديال التجربة، خاصك تشري النسخة الكاملة";
+} else if(localStorage.getItem("snack_code") === "SAADA-1234"){
+  document.getElementById("app").style.display = "block";
+} else {
+  document.getElementById("lock").style.display = "block";
+}
+
+function activer(){
+  var c = document.getElementById("codeInput").value.trim();
+  if(c === "SAADA-1234"){
+    localStorage.setItem("snack_code", c);
+    alert("مبروك ✅ التطبيق تفعّل");
+    location.reload();
+  } else {
+    alert("الكود غالط ❌ جرب SAADA-1234");
+  }
+}
+
+function copyNum(){
+  var t = document.createElement("textarea");
+  t.value = "0656533058";
+  document.body.appendChild(t);
+  t.select();
+  document.execCommand("copy");
+  document.body.removeChild(t);
+  alert("النمرة تنسخات ✅ سير لواتساب و كوليها");
+}
+
+// ===== 3. المنيو =====
+var produits = [
+  {nom:"سندويتش", prix:15, cout:7},
+  {nom:"بانيني", prix:18, cout:8},
+  {nom:"طاكوس", prix:25, cout:12},
+  {nom:"بيتزا صغيرة", prix:20, cout:9},
+  {nom:"برغر", prix:22, cout:10},
+  {nom:"عصير", prix:10, cout:4},
+  {nom:"قهوة / أتاي", prix:8, cout:2},
+  {nom:"بطاطا مقلية", prix:12, cout:5}
+];
+
+var html = "";
+produits.forEach(function(p, i){
+  html += '<div class="item"><div><b>'+p.nom+'</b><br><span>الثمن: '+p.prix+' درهم | التكلفة: '+p.cout+' درهم</span></div><div class="qty"><button onclick="changeQ('+i+',-1)">-</button><input id="q'+i+'" value="0" readonly><button onclick="changeQ('+i+',1)">+</button></div></div>';
+});
+document.getElementById("menu").innerHTML = html;
+
+function changeQ(i, d){
+  var el = document.getElementById("q"+i);
+  var v = parseInt(el.value) + d;
+  if(v < 0) v = 0;
+  el.value = v;
+}
+
+function calculer(){
+  var totalVente = 0, totalCout = 0, totalQte = 0;
+  produits.forEach(function(p, i){
+    var q = parseInt(document.getElementById("q"+i).value) || 0;
+    totalVente += q * p.prix;
+    totalCout += q * p.cout;
+    totalQte += q;
+  });
+  var kera = parseFloat(document.getElementById("kera").value) || 0;
+  var salaire = parseFloat(document.getElementById("salaire").value) || 0;
+  var daw = parseFloat(document.getElementById("daw").value) || 0;
+  var masarif = kera + salaire + daw;
+  var ribh = totalVente - totalCout - masarif;
+  var res = document.getElementById("resultat");
+  res.style.display = "block";
+  res.innerHTML = "🍔 بعتي: <b>" + totalQte + " حبة</b><br>💰 دخلتي: <b>" + totalVente + " درهم</b><br>📦 تكلفة السلعة: <b>" + totalCout + " درهم</b><br>🏠 المصاريف: <b>" + masarif + " درهم</b><br><hr><h2 style='color:" + (ribh>=0 ? "green" : "red") + ";margin:0;'>الربح ديالك: " + ribh + " درهم</h2>" + (ribh>=0 ? "<p>مزيان، كمل هاكا! 💪</p>" : "<p>اليوم خاسر، حاول تنقص المصاريف</p>");
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function resetAll(){
+  produits.forEach(function(p,i){ document.getElementById("q"+i).value = 0; });
+  document.getElementById("kera").value = "";
+  document.getElementById("salaire").value = "";
+  document.getElementById("daw").value = "";
+  document.getElementById("resultat").style.display = "none";
+}
+</script>
+</body>
+  </html>
